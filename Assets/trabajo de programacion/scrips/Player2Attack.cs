@@ -1,3 +1,7 @@
+/*Brenda Sofia Ramires Hernandez
+Ingenieria multimedia: Programacion de videojuegos
+2026*/
+
 using UnityEngine;
 
 public class Player2Attack : MonoBehaviour
@@ -15,6 +19,8 @@ public class Player2Attack : MonoBehaviour
         sr = GetComponent<SpriteRenderer>();
         sr.sprite = idle;
     }
+
+/*Controles del jugador (cambio de sprites) con las flechas*/
 
     void Update()
     {
