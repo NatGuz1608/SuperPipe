@@ -1,8 +1,9 @@
 // ============================================================
-// GameManager.cs 
+// GameManager.cs
 // Central controller for a single player's side of the game.
 // Manages the countdown sequence, enemy spawning, score tracking,
-// and audio feedback. 
+// and audio feedback.
+// Each player has their own GameManager instance in the scene.
 // ============================================================
 
 using UnityEngine;
@@ -12,12 +13,12 @@ using TMPro;
 
 public class GameManager : MonoBehaviour
 {
-    [Header("UI - Referencias Locales")]
+    [Header("UI - Local References")]
     public TextMeshProUGUI textoCuentaAtras; // Countdown text element shown before the game starts
     public TextMeshProUGUI textoPuntos;      // Score display text for this player's side
 
-    [Header("Configuración")]
-    public string mensajeFinalCuenta = "¡GOYA!"; // Message shown at the end of the countdown
+    [Header("Configuration")]
+    public string mensajeFinalCuenta = "GOYA!"; // Message shown at the end of the countdown
     public List<GameObject> villanos;            // Pool of enemy GameObjects managed by this instance
     public float intervaloAparicion = 1f;        // Seconds between each enemy spawn attempt
 
@@ -25,12 +26,12 @@ public class GameManager : MonoBehaviour
     public AudioSource audioSource;  // AudioSource used for score feedback sound
     public AudioClip clipContador;   // Sound clip played each time a point is scored
 
-    [Header("Final del Juego")]
-    public FinalManager finalManager; // Referencia al script que maneja el anuncio de victoria
-    public string nombreJugador;      // "Jugador 1" o "Jugador 2" para el anuncio
-    public int metaPuntos = 30;       // Puntos necesarios para ganar el juego
+    [Header("End of Game")]
+    public FinalManager finalManager; // Reference to the script that handles the victory announcement
+    public string nombreJugador;      // "Player 1" or "Player 2" for the announcement
+    public int metaPuntos = 30;       // Points required to win the game
 
-    private int puntos = 0;           // Running score for this player's side
+    private int puntos = 0;             // Running score for this player's side
     private bool juegoIniciado = false; // Gate flag; prevents spawning before countdown completes
 
     /// <summary>
@@ -44,6 +45,7 @@ public class GameManager : MonoBehaviour
 
     /// <summary>
     /// Coroutine that runs a 3-second numeric countdown followed by a start message.
+    /// Unlocks enemy spawning once it completes.
     /// </summary>
     IEnumerator CuentaAtras()
     {
@@ -68,7 +70,8 @@ public class GameManager : MonoBehaviour
 
     /// <summary>
     /// Increments the player's score by one, updates the score UI text,
-    /// and plays the scoring sound effect. Now also checks for victory condition.
+    /// and plays the scoring sound effect. Also checks for victory condition.
+    /// Called by Villano.Morir() when a villain is successfully hit.
     /// </summary>
     public void SumarPunto()
     {
@@ -79,15 +82,16 @@ public class GameManager : MonoBehaviour
             audioSource.PlayOneShot(clipContador); // Non-interrupting one-shot audio feedback
         }
 
-        // Verificamos si este jugador alcanzó la meta de 30 puntos
+        // We check if this player has reached the goal of 30 points
         if (puntos >= metaPuntos && finalManager != null)
         {
-            finalManager.DeclararGanador(nombreJugador);
+            finalManager.DeclararGanador(nombreJugador); // Trigger the end-game victory screen
         }
     }
 
     /// <summary>
     /// Selects and activates a random inactive enemy from the pool.
+    /// Only one villain is active at a time per side; spawning is skipped if any are still visible.
     /// </summary>
     void AparecerVillano()
     {
@@ -104,12 +108,13 @@ public class GameManager : MonoBehaviour
         if (candidatos.Count > 0)
         {
             int indiceAleatorio = Random.Range(0, candidatos.Count);
-            candidatos[indiceAleatorio].SetActive(true);
+            candidatos[indiceAleatorio].SetActive(true); // OnEnable in Villano handles the rest
         }
     }
 
     /// <summary>
     /// Returns the number of enemies currently active in the hierarchy.
+    /// Used to ensure only one villain is on screen at a time per side.
     /// </summary>
     int ContarActivos()
     {
